@@ -1,0 +1,22 @@
+{
+    "discovery": {
+        "discovery_id": "042",
+        "timestamp": "2026-04-14T13:05:00",
+        "episode": 900,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 201},
+            {"method": "POST", "endpoint": "/discounts", "status": 201},
+            {"method": "DELETE", "endpoint": "/points", "status": 404}
+        ],
+        "final_status": 404,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 1, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Agent built partial chain then tried to delete points that were never created. 404 is correct response"
+    }
+}

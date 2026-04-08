@@ -1,0 +1,20 @@
+{
+    "discovery": {
+        "discovery_id": "045",
+        "timestamp": "2026-04-14T13:20:00",
+        "episode": 300,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 400}
+        ],
+        "final_status": 400,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Item created but price creation failed with 400, likely malformed price data from PBT mutation. Server correctly rejected invalid input"
+    }
+}

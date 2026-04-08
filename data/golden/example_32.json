@@ -1,0 +1,21 @@
+{
+    "discovery": {
+        "discovery_id": "032",
+        "timestamp": "2026-04-14T12:00:00",
+        "episode": 420,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 500}
+        ],
+        "final_status": 500,
+        "reward": 10,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": true,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Duplicate price creation returns 500 instead of 400 or 409. Server fails ungracefully but no data corruption or state inconsistency results. Cosmetic error handling issue"
+    }
+}

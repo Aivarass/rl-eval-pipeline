@@ -1,0 +1,22 @@
+{
+    "discovery": {
+        "discovery_id": "034",
+        "timestamp": "2026-04-14T12:15:00",
+        "episode": 720,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 201},
+            {"method": "POST", "endpoint": "/discounts", "status": 201},
+            {"method": "DELETE", "endpoint": "/discounts", "status": 200}
+        ],
+        "final_status": 200,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "state_management",
+        "notes": "Full dependency chain built then discount correctly deleted. All operations behaved as expected"
+    }
+}

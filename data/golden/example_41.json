@@ -1,0 +1,22 @@
+{
+    "discovery": {
+        "discovery_id": "041",
+        "timestamp": "2026-04-14T13:00:00",
+        "episode": 1200,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 201},
+            {"method": "POST", "endpoint": "/discounts", "status": 201},
+            {"method": "POST", "endpoint": "/points", "status": 201}
+        ],
+        "final_status": 201,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 1, "hasValidPointsId": 1}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "state_management",
+        "notes": "Complete dependency chain built successfully. All four resources created in correct order. System working as intended"
+    }
+}

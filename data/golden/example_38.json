@@ -1,0 +1,21 @@
+{
+    "discovery": {
+        "discovery_id": "038",
+        "timestamp": "2026-04-14T12:40:00",
+        "episode": 45,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/points", "status": 400},
+            {"method": "POST", "endpoint": "/discounts", "status": 400}
+        ],
+        "final_status": 400,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Agent skipping dependency chain. Points and discounts require price to exist first. 400 rejections are correct. Agent has not yet learned the dependency order"
+    }
+}

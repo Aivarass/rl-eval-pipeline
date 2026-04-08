@@ -1,0 +1,22 @@
+{
+    "discovery": {
+        "discovery_id": "039",
+        "timestamp": "2026-04-14T12:50:00",
+        "episode": 1850,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/prices", "status": 201},
+            {"method": "POST", "endpoint": "/discounts", "status": 201},
+            {"method": "DELETE", "endpoint": "/items", "status": 500}
+        ],
+        "final_status": 500,
+        "reward": 10,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 1, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": true,
+        "severity": "critical",
+        "category": "data_integrity",
+        "notes": "Deleting an item that has dependent prices and discounts causes a 500 instead of cascading delete or 409 conflict. Could leave orphaned price and discount records in the database"
+    }
+}

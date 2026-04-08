@@ -1,0 +1,28 @@
+{ "discovery": {
+
+   "discovery_id":"024",
+   "timestamp":"2026-04-07T13:15:01",
+   "episode":329,
+   "api_sequence":[
+      {
+         "method":"POST",
+         "endpoint":"/items",
+         "status":201
+      }
+   ],
+   "final_status":201,
+   "reward":0,
+   "state_features":{
+      "hasValidItemId":1,
+      "hasValidPriceId":0,
+      "hasValidDiscountId":0,
+      "hasValidPointsId":0
+   }
+},
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "state_management",
+        "notes": "POST returns 201, it's a valid scenario, not a bug"
+    }
+}

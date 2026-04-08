@@ -1,0 +1,33 @@
+{ "discovery": {
+
+   "discovery_id":"011",
+   "timestamp":"2026-04-07T13:12:30",
+   "episode":214,
+   "api_sequence":[
+      {
+         "method":"POST",
+         "endpoint":"/prices",
+         "status":201
+      },
+      {
+         "method":"DELETE",
+         "endpoint":"/items",
+         "status":400
+      }
+   ],
+   "final_status":400,
+   "reward":0,
+   "state_features":{
+      "hasValidItemId":0,
+      "hasValidPriceId":1,
+      "hasValidDiscountId":0,
+      "hasValidPointsId":0
+   }
+},
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "DELETE returns 400 as expected"
+    }
+}

@@ -1,0 +1,23 @@
+{ "discovery": {
+
+    "discovery_id": "003",
+    "timestamp": "2026-04-14T10:30:00",
+    "episode": 1500,
+    "api_sequence": [
+        {"method": "POST", "endpoint": "/items", "status": 201},
+        {"method": "POST", "endpoint": "/prices", "status": 201},
+        {"method": "POST", "endpoint": "/discounts", "status": 201},
+        {"method": "POST", "endpoint": "/points", "status": 201},
+        {"method": "DELETE", "endpoint": "/points", "status": 500}
+    ],
+    "final_status": 500,
+    "reward": 10,
+    "state_features": {"hasValidItemId": 1, "hasValidPriceId": 1, "hasValidDiscountId": 1, "hasValidPointsId": 1}
+},
+    "human_label": {
+        "is_genuine_bug": true,
+        "severity": "high",
+        "category": "error_handling",
+        "notes": "DELETE returns 500 but only after specific create sequence"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "discovery": {
+        "discovery_id": "035",
+        "timestamp": "2026-04-14T12:20:00",
+        "episode": 55,
+        "api_sequence": [
+            {"method": "DELETE", "endpoint": "/prices", "status": 404}
+        ],
+        "final_status": 404,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 0, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Attempting to delete non-existent price. 404 is the correct response. Agent exploring randomly in early episode"
+    }
+}

@@ -1,0 +1,25 @@
+{
+   "discovery_id":"160",
+   "timestamp":"2026-04-07T13:12:30",
+   "episode":203,
+   "api_sequence":[
+      {
+         "method":"POST",
+         "endpoint":"/discounts",
+         "status":404
+      },
+      {
+         "method":"POST",
+         "endpoint":"/points",
+         "status":404
+      }
+   ],
+   "final_status":404,
+   "reward":0,
+   "state_features":{
+      "hasValidItemId":0,
+      "hasValidPriceId":0,
+      "hasValidDiscountId":0,
+      "hasValidPointsId":0
+   }
+}

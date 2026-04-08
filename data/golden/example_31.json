@@ -1,0 +1,20 @@
+{
+    "discovery": {
+        "discovery_id": "031",
+        "timestamp": "2026-04-14T11:50:00",
+        "episode": 980,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "POST", "endpoint": "/items", "status": 500}
+        ],
+        "final_status": 500,
+        "reward": 10,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": true,
+        "severity": "medium",
+        "category": "error_handling",
+        "notes": "Duplicate POST to items returns 500 instead of 409 conflict. Server should handle duplicate creation gracefully, not crash"
+    }
+}

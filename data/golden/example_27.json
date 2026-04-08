@@ -1,0 +1,19 @@
+{
+    "discovery": {
+        "discovery_id": "027",
+        "timestamp": "2026-04-14T11:45:00",
+        "episode": 340,
+        "api_sequence": [
+            {"method": "DELETE", "endpoint": "/items", "status": 500}
+        ],
+        "final_status": 500,
+        "reward": 10,
+        "state_features": {"hasValidItemId": 0, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "error_handling",
+        "notes": "Attempting to delete items when none exist. 500 instead of 404 is poor error handling but not a stateful bug, no valid dependencies were established"
+    }
+}

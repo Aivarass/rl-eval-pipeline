@@ -1,0 +1,21 @@
+{
+    "discovery": {
+        "discovery_id": "036",
+        "timestamp": "2026-04-14T12:30:00",
+        "episode": 12,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/discounts", "status": 400},
+            {"method": "POST", "endpoint": "/points", "status": 400},
+            {"method": "DELETE", "endpoint": "/items", "status": 404}
+        ],
+        "final_status": 404,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 0, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "Agent flailing randomly in early episode. No dependencies established, all rejections are correct. Pure exploration noise"
+    }
+}

@@ -1,0 +1,28 @@
+{ "discovery": {
+
+   "discovery_id":"015",
+   "timestamp":"2026-04-07T13:14:58",
+   "episode":150,
+   "api_sequence":[
+      {
+         "method":"POST",
+         "endpoint":"/discounts",
+         "status":404
+      }
+   ],
+   "final_status":404,
+   "reward":0,
+   "state_features":{
+      "hasValidItemId":0,
+      "hasValidPriceId":0,
+      "hasValidDiscountId":0,
+      "hasValidPointsId":0
+   }
+},
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "validation",
+        "notes": "POST returns 400 as expected"
+    }
+}

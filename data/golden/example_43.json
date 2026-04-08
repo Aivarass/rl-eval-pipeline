@@ -1,0 +1,21 @@
+{
+    "discovery": {
+        "discovery_id": "043",
+        "timestamp": "2026-04-14T13:10:00",
+        "episode": 600,
+        "api_sequence": [
+            {"method": "POST", "endpoint": "/items", "status": 201},
+            {"method": "DELETE", "endpoint": "/items", "status": 200},
+            {"method": "POST", "endpoint": "/items", "status": 201}
+        ],
+        "final_status": 201,
+        "reward": 0,
+        "state_features": {"hasValidItemId": 1, "hasValidPriceId": 0, "hasValidDiscountId": 0, "hasValidPointsId": 0}
+    },
+    "human_label": {
+        "is_genuine_bug": false,
+        "severity": "low",
+        "category": "state_management",
+        "notes": "Create, delete, recreate cycle. All operations returned expected status codes. System correctly handles item lifecycle"
+    }
+}
