@@ -4,7 +4,7 @@ Automated quality evaluation for RL agent discoveries, using LLM as Judge, rule 
 
 Built to solve a real problem: an RL agent finds hundreds of potential API defects, but without evaluation most are noise. This pipeline separates genuine bugs from false positives, measures judge reliability against human labels, and feeds assessment signals back into the agent's reward function to improve future exploration.
 
-Companion project to [SARSA REST Bug Hunter](https://github.com/Aivarass/autonomous-sarsa-rest-agent), a reinforcement learning agent that autonomously discovers multi step API bugs.
+Companion project to [SARSA REST Bug Hunter](https://github.com/Aivarass/autonomous-sarsa-rest-agent/tree/eval_pipeline_integration), a reinforcement learning agent that autonomously discovers multi step API bugs.
 
 ## The Problem
 
@@ -224,6 +224,6 @@ Python, OpenAI API (GPT-4o-mini), pytest, scipy (chi squared tests), SARSA (rein
 
 ## Related Projects
 
-- [SARSA REST Bug Hunter](https://github.com/Aivarass/autonomous-sarsa-rest-agent) Python RL agent that autonomously discovers multi step API bugs. The data source for this evaluation pipeline.
+- [SARSA REST Bug Hunter](https://github.com/Aivarass/autonomous-sarsa-rest-agent/tree/eval_pipeline_integration) Python RL agent that autonomously discovers multi step API bugs. The data source for this evaluation pipeline.
 - [SARSA REST Bug Hunter (Java)](https://github.com/Aivarass/sarsa-rest-bug-hunter) Original Java implementation with pure neural network (no ML libraries). Discovers 5 step bug chains across 3.2 quintillion possible paths.
 - [SARSA RSPS Agent](https://github.com/Aivarass/sarsa-rsps-agent) RL agent that learns combat strategies in a multiplayer game environment. Demonstrates RL applied beyond testing.
