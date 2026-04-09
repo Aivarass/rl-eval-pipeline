@@ -12,7 +12,20 @@ RL testing agents are good at finding patterns that produce 500 errors. They're 
 
 Without evaluation, the agent exploits a single high reward pattern and generates hundreds of redundant discoveries. In early runs, the bug hunter produced 600+ discoveries in 4 minutes, all variations of the same `GET_ALL → DELETE → 500` sequence. The agent had no signal telling it to explore new patterns instead of repeating known ones.
 
-This pipeline exists to close that gap.
+## Results
+
+Three configurations were compared across 100K+ episode training runs on a target REST API with four resource chains (items → prices → discounts → points) and a hidden bug reachable only through a specific 5 step dependency sequence.
+
+The agent autonomously discovered a bug requiring a 5 step dependency chain (Item → Price → Discount → Point → DELETE) with no domain knowledge, no schema, and no hardcoded exploration rules.
+
+| Metric | Baseline (no eval) | Eval Pipeline (no decay) | Eval + Novelty Decay |
+|--------|-------------------|--------------------------|----------------------|
+| Unique bug combos | 47 | 57 | 154 |
+| Endpoints explored | 1-2 | 2-3 | All 4 |
+| Hidden bug discovered | No | No | Yes, episode 26,505 |
+| Peak execute ratio | - | - | 57.8% |
+
+Without evaluation, the agent collapsed onto `DELETE /items` and repeated it indefinitely. With severity only evaluation, it explored slightly more but still gravitated toward the easiest high reward paths. With novelty decay, unique discoveries tripled and the agent was pushed deep enough into the state space to reach the final endpoint in the chain, something neither previous configuration achieved.
 
 ## Architecture
 
@@ -32,8 +45,9 @@ SARSA Bug Hunter (RL Agent)
 ┌─────────────────────────────┐
 │  LLM Judge (GPT-4o-mini)     │  Structured evaluation:
 │  Bug vs false positive       │  is_genuine_bug, confidence,
-│  Severity classification     │  severity, category, root_cause
-│  Root cause analysis         │
+│  Severity classification     │  severity, category, root_cause,
+│  Root cause analysis         │  novelty (vs prior findings)
+│  Novelty assessment          │
 └─────────────┬───────────────┘
               │ evaluations
               ▼
@@ -47,17 +61,18 @@ SARSA Bug Hunter (RL Agent)
               ▼
 ┌─────────────────────────────┐
 │  Feedback Loop               │  Reward modification:
-│  Reward adjustment           │  genuine high → +10,
-│  Agent behaviour shaping     │  genuine low → +3,
-│                              │  false positive → -1
+│  Reward adjustment           │  base × novelty score,
+│  Agent behaviour shaping     │  false positive → -1
 └─────────────────────────────┘
 ```
 
 ## How It Works
 
-### LLM Integration
+### Feedback Loop and Novelty Scoring
 
-Each discovery from the bug hunter is sent to GPT-4o-mini with a structured prompt. The judge returns a validated JSON assessment:
+This closed loop architecture — RL exploration shaped by LLM judgment — applies the same principle as RLHF to automated testing: using qualitative evaluation to guide quantitative optimisation.
+
+Each discovery is sent to GPT-4o-mini with a structured prompt. The judge returns a validated JSON assessment:
 
 ```json
 {
@@ -65,54 +80,10 @@ Each discovery from the bug hunter is sent to GPT-4o-mini with a structured prom
     "confidence": 0.9,
     "severity": "high",
     "category": "error_handling",
-    "root_cause": "DELETE returns 500 after valid resource creation sequence"
+    "root_cause": "DELETE returns 500 after valid resource creation sequence",
+    "novelty": 0.9
 }
 ```
-
-Responses are validated through a `JudgeResult` dataclass that enforces field types, allowed values, and confidence bounds. Malformed LLM responses are caught before they enter the pipeline.
-
-The model, temperature, and system prompt are all configurable through `judge_config.json`, so you can iterate on prompts or swap models without touching code.
-
-### LLM as Judge Evaluation
-
-The judge itself is evaluated against a golden dataset of 45 human labelled examples, a mix of genuine bugs, noise, and non bugs, each manually classified with severity and category.
-
-**Results against golden dataset:**
-
-| Metric | Score |
-|--------|-------|
-| Accuracy | 97.8% |
-| Precision | 93.3% |
-| Recall | 100% |
-| F1 | 96.6% |
-
-**Findings from failure mode analysis:**
-
-The judge is excellent at binary bug detection. It catches every genuine bug and rarely flags noise as real. Severity classification is polarised: it reliably identifies high and low severity but struggles with medium and critical, defaulting to the extremes. Category classification is the weakest dimension at 49% accuracy. The judge defaults to `error_handling` for most findings and struggles to distinguish `state_management` and `data_integrity` from generic error patterns.
-
-These findings directly inform where human review is still needed and where the judge can be trusted to operate autonomously.
-
-### Judge Reliability
-
-Two additional checks measure how trustworthy the judge actually is:
-
-**Consistency measurement** runs the same discovery through the judge multiple times and tracks how often the answers agree. If the judge says "high severity bug" on one run and "low severity noise" on the next, that's a problem. The measurement covers bug detection agreement, severity agreement, category agreement, and confidence spread across runs.
-
-**Confidence calibration** checks whether the judge's confidence scores mean what they say. When the judge says confidence=0.9, is it actually correct 90% of the time? Results are binned by confidence level and compared against actual accuracy. The Expected Calibration Error (ECE) gives a single number for how well calibrated the judge is. A well calibrated judge at 0.9 confidence should be right about 90% of the time; an overconfident one might only be right 50% of the time despite claiming 90%.
-
-### Automated QA Pipeline
-
-Three validation layers operate in sequence:
-
-**Rule based checks** run first and are fast. They validate input completeness, enforce type constraints, check API sequence dependency order (items before prices before discounts before points), detect duplicates through sequence normalisation that collapses consecutive repeated calls, and verify `final_status` consistency.
-
-**LLM judge** runs on discoveries that pass rule checks. This is the expensive layer, so garbage is filtered before it reaches the API.
-
-**Statistical analysis** operates on evaluated batches. Distribution summaries track bug rates, severity breakdowns, and category distributions. Batch comparison uses chi squared tests via scipy to detect distribution drift between runs. Outlier detection flags episode ranges with abnormally high false positive rates.
-
-The pipeline orchestrator (`QualityReport`) coordinates all three layers and supports both batch processing and real time single discovery evaluation.
-
-### Feedback Loop
 
 Evaluation results feed directly into the bug hunter's reward function:
 
@@ -126,24 +97,56 @@ def adjust_reward(self, judge_result):
         'medium': 6,
         'high': 10
     }
-    return severity_rewards.get(judge_result.severity, 10)
+    base = severity_rewards.get(judge_result.severity, 10)
+    return base * judge_result.novelty
 ```
 
-Instead of a flat +10 for any 500 response, the agent's reward is now informed by the LLM judge's assessment. Genuine high severity bugs receive full reward. Low severity findings receive reduced reward. False positives are penalised. The agent learns what "good" means and adjusts its exploration accordingly.
+The reward is the product of severity and novelty. The first discovery of a high severity bug returns `10 * 1.0 = 10`. The 20th rediscovery of the same root cause might return `10 * 0.05 = 0.5`. False positives are penalised at -1. The agent naturally shifts exploration toward unexplored patterns because known patterns stop paying.
 
-**Why this matters:** Without feedback, the agent found one pattern and exploited it 600+ times. With feedback, the agent is incentivised to discover diverse, high quality bugs rather than repeating known patterns. This is the same closed loop architecture used in RLHF pipelines for model post training, where evaluation signals shape agent behaviour.
+As discoveries accumulate, the pipeline builds a compressed summary of known bug patterns from the evaluated batch:
 
-## Duplicate Detection and Sequence Normalisation
+```
+Previously identified bug patterns:
+- "DELETE returns 500 after valid resource creation sequence" (seen 12x, severity: high, category: error_handling)
+- "Discount deletion fails with cascading reference error" (seen 3x, severity: high, category: data_integrity)
+```
 
-A key finding during development: the RL agent naturally exploits high reward patterns. Once it discovers that `GET_ALL → DELETE → 500` yields +10 reward, it repeats variations endlessly. `GET_ALL → DELETE × 1`, `GET_ALL → DELETE × 2`, up to `GET_ALL → DELETE × 12`. Each is technically a unique API sequence but semantically identical.
+This summary is injected into the judge's prompt alongside each new discovery. The judge returns a `novelty` score (0.0 to 1.0) based on root cause similarity, not API sequence similarity. Different sequences that trigger the same underlying bug score low. A genuinely new root cause scores high.
 
-The pipeline handles this at two levels:
+The summary is grouped by root cause text from previous evaluations. Grouping happens at the semantic level (what the LLM identified as the root cause) rather than at the structural level (which API endpoints were called). The LLM performing the novelty assessment reads through wording variations, so even if the same bug gets slightly different root cause descriptions across evaluations, the novelty assessment still recognises the pattern as saturated.
 
-**In the bug hunter:** Only genuinely new bug combos emit discoveries. The agent still receives rewards for learning (SARSA updates continue) but duplicate patterns don't generate evaluation overhead.
+### Design Journey
 
-**In the rule checks:** Sequence normalisation collapses consecutive repeated calls before hashing. `GET_ALL → DELETE × 12` normalises to the same key as `GET_ALL → DELETE × 1`. The first occurrence passes through; subsequent variations are filtered.
+Initial runs with flat +10 reward collapsed into exploitation — the agent repeated `DELETE /items` 105,000 times per window because every hit paid the same. Adding the LLM judge with severity based rewards didn't fix this because repeat combos bypassed the judge entirely and still received +10. Removing rewards for repeat combos caused the opposite failure — learned helplessness where the agent stopped executing altogether. The breakthrough was combining count based decay for repeat discoveries with LLM novelty scoring for new ones. Known bugs pay less over time; genuinely new discoveries pay full reward based on the judge's severity and novelty assessment. This created natural exploration pressure without any hardcoded coverage rules.
 
-This reduced discovery volume from 600+ to ~26 per run while preserving all unique findings.
+## LLM as Judge Evaluation
+
+The judge is evaluated against a golden dataset of 45 human labelled examples, a mix of genuine bugs, noise, and non bugs, each manually classified with severity and category.
+
+| Metric | Score |
+|--------|-------|
+| Accuracy | 97.8% |
+| Precision | 93.3% |
+| Recall | 100% |
+| F1 | 96.6% |
+
+The judge excels at binary bug detection (100% recall) but polarises severity classification toward extremes and defaults to `error_handling` for categories. These findings inform where human review is still needed.
+
+**Judge reliability** is measured through two additional checks. Consistency measurement runs the same discovery through the judge multiple times and tracks agreement across bug detection, severity, category, and confidence spread. Confidence calibration checks whether the judge's stated confidence matches actual accuracy — when the judge says confidence=0.9, the Expected Calibration Error (ECE) measures whether it's actually correct 90% of the time.
+
+## Pipeline Details
+
+### Rule Based Checks
+
+Rule checks run first as a fast pre filter before the expensive LLM layer. They validate input completeness, enforce type constraints, check API sequence dependency order, detect duplicates through sequence normalisation, and verify `final_status` consistency.
+
+### Statistical Analysis
+
+Statistical analysis operates on evaluated batches. Distribution summaries track bug rates, severity breakdowns, and category distributions. Batch comparison uses chi squared tests to detect distribution drift between runs. Outlier detection flags episode ranges with abnormally high false positive rates.
+
+### Duplicate Detection
+
+The RL agent naturally exploits high reward patterns, repeating variations like `GET_ALL → DELETE × 1` through `GET_ALL → DELETE × 12`. Sequence normalisation collapses consecutive repeated calls to the same key before hashing, so the first occurrence passes through and subsequent variations are filtered. This reduced discovery volume from 600+ to ~26 per run while preserving all unique findings.
 
 ## Configuration
 
@@ -184,6 +187,7 @@ tests/
     test_judge_eval.py    # Calibration and consistency tests
     test_rule_check.py    # Input, dependency, and duplicate detection tests
     test_stat_checks.py   # Distribution and outlier detection tests
+    test_quality_report.py # Novelty summary building tests
 judge_config.json         # External judge configuration
 ```
 
