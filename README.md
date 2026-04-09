@@ -10,7 +10,7 @@ Companion project to [SARSA REST Bug Hunter](https://github.com/Aivarass/autonom
 
 RL testing agents are good at finding patterns that produce 500 errors. They're bad at knowing which ones matter.
 
-Without evaluation, the agent exploits a single high reward pattern and generates hundreds of redundant discoveries. In early runs, the bug hunter produced 600+ discoveries in 4 minutes, all variations of the same `GET_ALL → DELETE → 500` sequence. The agent had no signal telling it to explore new patterns instead of repeating known ones.
+Without evaluation, the agent exploits a single high reward pattern and generates hundreds of redundant discoveries. In early runs, the bug hunter produced 600+ discoveries in 4 minutes, all variations of the same `GET_ALL → DELETE → 500` sequence. The agent had no signal telling it to explore new patterns instead of repeating known ones. This pipeline exists to close that gap — and feed evaluation signals back into the agent to shape what it explores next.
 
 ## Results
 
@@ -23,7 +23,6 @@ The agent autonomously discovered a bug requiring a 5 step dependency chain (Ite
 | Unique bug combos | 47 | 57 | 154 |
 | Endpoints explored | 1-2 | 2-3 | All 4 |
 | Hidden bug discovered | No | No | Yes, episode 26,505 |
-| Peak execute ratio | - | - | 57.8% |
 
 Without evaluation, the agent collapsed onto `DELETE /items` and repeated it indefinitely. With severity only evaluation, it explored slightly more but still gravitated toward the easiest high reward paths. With novelty decay, unique discoveries tripled and the agent was pushed deep enough into the state space to reach the final endpoint in the chain, something neither previous configuration achieved.
 
@@ -117,7 +116,7 @@ The summary is grouped by root cause text from previous evaluations. Grouping ha
 
 ### Design Journey
 
-Initial runs with flat +10 reward collapsed into exploitation — the agent repeated `DELETE /items` 105,000 times per window because every hit paid the same. Adding the LLM judge with severity based rewards didn't fix this because repeat combos bypassed the judge entirely and still received +10. Removing rewards for repeat combos caused the opposite failure — learned helplessness where the agent stopped executing altogether. The breakthrough was combining count based decay for repeat discoveries with LLM novelty scoring for new ones. Known bugs pay less over time; genuinely new discoveries pay full reward based on the judge's severity and novelty assessment. This created natural exploration pressure without any hardcoded coverage rules.
+Initial runs with flat +10 reward collapsed into exploitation — the agent repeated `DELETE /items` 105,000 times per window because every hit paid the same. Adding the LLM judge with severity-based rewards didn't fix this because repeat combos bypassed the judge entirely and still received +10. Removing rewards for repeat combos caused the opposite failure — learned helplessness where the agent stopped executing altogether. The breakthrough was combining count-based decay for repeat discoveries with LLM novelty scoring for new ones. Known bugs pay less over time; genuinely new discoveries pay full reward based on the judge's severity and novelty assessment. This created natural exploration pressure without any hardcoded coverage rules. The result: 154 unique bug combos across all four endpoints, including a 5-level dependency chain discovery that no previous configuration achieved.
 
 ## LLM as Judge Evaluation
 
