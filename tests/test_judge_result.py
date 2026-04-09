@@ -74,3 +74,29 @@ class TestJudgeResult:
             raw = f'{{"is_genuine_bug": true, "confidence": 0.5, "severity": "low", "category": "{cat}", "root_cause": "test"}}'
             result = JudgeResult.from_response(raw)
             assert result.category == cat
+
+    def test_novelty_defaults_to_one(self):
+        raw = '{"is_genuine_bug": true, "confidence": 0.9, "severity": "high", "category": "error_handling", "root_cause": "test"}'
+        result = JudgeResult.from_response(raw)
+        assert result.novelty == 1.0
+
+    def test_novelty_parsed_from_response(self):
+        raw = '{"is_genuine_bug": true, "confidence": 0.9, "severity": "high", "category": "error_handling", "root_cause": "test", "novelty": 0.3}'
+        result = JudgeResult.from_response(raw)
+        assert result.novelty == 0.3
+
+    def test_rejects_novelty_out_of_range(self):
+        raw = '{"is_genuine_bug": true, "confidence": 0.9, "severity": "high", "category": "error_handling", "root_cause": "test", "novelty": 1.5}'
+        with pytest.raises(ValueError, match="novelty must be 0.0-1.0"):
+            JudgeResult.from_response(raw)
+
+    def test_rejects_negative_novelty(self):
+        raw = '{"is_genuine_bug": true, "confidence": 0.9, "severity": "high", "category": "error_handling", "root_cause": "test", "novelty": -0.1}'
+        with pytest.raises(ValueError, match="novelty must be 0.0-1.0"):
+            JudgeResult.from_response(raw)
+
+    def test_accepts_boundary_novelty_values(self):
+        for nov in [0.0, 1.0]:
+            raw = f'{{"is_genuine_bug": true, "confidence": 0.5, "severity": "low", "category": "other", "root_cause": "test", "novelty": {nov}}}'
+            result = JudgeResult.from_response(raw)
+            assert result.novelty == nov

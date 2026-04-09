@@ -20,7 +20,8 @@ class QualityReport:
         validated = self.execute_rules_based_check(discovery)
         if validated is None:
             return None, None
-        result = self.llm_judge.query_llm(validated["data"])
+        prior = self._build_prior_findings_summary(self.accumulating_batch)
+        result = self.llm_judge.query_llm(validated["data"], prior_findings=prior)
         evaluation = {"discovery": validated["data"], "llm": result}
         self.accumulating_batch.append(evaluation)
         summary = None
@@ -66,7 +67,8 @@ class QualityReport:
         evaluations = []
         for discovery in validated:
             try:
-                result = self.llm_judge.query_llm(discovery["data"])
+                prior = self._build_prior_findings_summary(evaluations)
+                result = self.llm_judge.query_llm(discovery["data"], prior_findings=prior)
                 evaluations.append({
                     "discovery": discovery["data"],
                     "llm": result,
@@ -74,6 +76,31 @@ class QualityReport:
             except (ValueError, Exception) as e:
                 logger.error("LLM judge failed for discovery: %s", e)
         return evaluations
+
+    @staticmethod
+    def _build_prior_findings_summary(evaluations):
+        if not evaluations:
+            return None
+
+        patterns = {}
+        for evaluation in evaluations:
+            llm = evaluation["llm"]
+            if not llm.is_genuine_bug:
+                continue
+            cause = llm.root_cause
+            if cause not in patterns:
+                patterns[cause] = {"count": 0, "severity": llm.severity, "category": llm.category}
+            patterns[cause]["count"] += 1
+
+        if not patterns:
+            return None
+
+        lines = []
+        for cause, info in patterns.items():
+            lines.append(
+                f"- \"{cause}\" (seen {info['count']}x, severity: {info['severity']}, category: {info['category']})"
+            )
+        return "\n".join(lines)
 
     def execute_statistical_check(self, evaluations):
         summary = self.stat_checks.distribution_summary(evaluations)

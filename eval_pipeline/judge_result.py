@@ -9,6 +9,7 @@ class JudgeResult:
     severity: str
     category: str
     root_cause: str
+    novelty: float = 1.0
 
     VALID_SEVERITIES = {"critical", "high", "medium", "low"}
     VALID_CATEGORIES = {"data_integrity", "error_handling", "state_management", "validation", "other"}
@@ -42,4 +43,10 @@ class JudgeResult:
         if not isinstance(data["root_cause"], str) or not data["root_cause"]:
             raise ValueError(f"root_cause must be a non-empty string")
 
-        return JudgeResult(**{k: data[k] for k in required})
+        novelty = data.get("novelty", 1.0)
+        if not isinstance(novelty, (int, float)) or not 0.0 <= novelty <= 1.0:
+            raise ValueError(f"novelty must be 0.0-1.0, got {novelty}")
+
+        result = {k: data[k] for k in required}
+        result["novelty"] = float(novelty)
+        return JudgeResult(**result)

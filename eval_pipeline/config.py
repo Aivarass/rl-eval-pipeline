@@ -15,7 +15,8 @@ Respond ONLY with a JSON object in this exact format:
         "confidence": 0.0 to 1.0,
         "severity": "critical" or "high" or "medium" or "low",
         "category": "data_integrity" or "error_handling" or "state_management" or "validation" or "other",
-        "root_cause": "one or two sentence explanation"
+        "root_cause": "one or two sentence explanation",
+        "novelty": 0.0 to 1.0
     }
 Guidelines:
 - A 500 error after a valid sequence of dependent API calls is likely a genuine bug
@@ -24,7 +25,10 @@ Guidelines:
 - High severity means incorrect behavior affecting functionality
 - Medium severity means edge case failure under unusual conditions
 - Low severity means cosmetic or minor inconsistency
-- If unsure, set confidence below 0.5 and is_genuine_bug to false"""
+- If unsure, set confidence below 0.5 and is_genuine_bug to false
+- novelty: 1.0 = completely new root cause, 0.0 = exact duplicate of a known pattern
+- Judge novelty by root cause similarity, not API sequence — different sequences triggering the same underlying bug should score low
+- If no prior findings are provided, set novelty to 1.0"""
 
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "judge_config.json")
 

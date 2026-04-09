@@ -19,17 +19,18 @@ class LlmJudge:
         self.client = OpenAI(api_key=api_key)
         self.config = config or JudgeConfig.load()
 
-    def query_llm(self, discovery_json):
+    def query_llm(self, discovery_json, prior_findings=None):
+        content = f"Evaluate this discovery:\n{json.dumps(discovery_json, indent=2)}"
+        if prior_findings:
+            content += f"\n\nPreviously identified bug patterns:\n{prior_findings}"
+
         response = self.client.chat.completions.create(
             model=self.config.model,
             temperature=self.config.temperature,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": self.config.system_prompt},
-                {
-                    "role": "user",
-                    "content": f"Evaluate this discovery:\n{json.dumps(discovery_json, indent=2)}"
-                }
+                {"role": "user", "content": content}
             ]
         )
 
