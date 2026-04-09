@@ -10,7 +10,7 @@ Companion project to [SARSA REST Bug Hunter](https://github.com/Aivarass/autonom
 
 RL testing agents are good at finding patterns that produce 500 errors. They're bad at knowing which ones matter.
 
-Without evaluation, the agent exploits a single high reward pattern and generates hundreds of redundant discoveries. In early runs, the bug hunter produced 600+ discoveries in 4 minutes, all variations of the same `GET_ALL → DELETE → 500` sequence. The agent had no signal telling it to explore new patterns instead of repeating known ones. This pipeline exists to close that gap — and feed evaluation signals back into the agent to shape what it explores next.
+Without evaluation, the agent exploits a single high reward pattern and generates hundreds of redundant discoveries. In early runs, the bug hunter produced 600+ discoveries in 4 minutes, all variations of the same `GET_ALL → DELETE → 500` sequence. The agent had no signal telling it to explore new patterns instead of repeating known ones. This pipeline exists to close that gap, and feed evaluation signals back into the agent to shape what it explores next.
 
 ## Results
 
@@ -69,7 +69,7 @@ SARSA Bug Hunter (RL Agent)
 
 ### Feedback Loop and Novelty Scoring
 
-This closed loop architecture — RL exploration shaped by LLM judgment — applies the same principle as RLHF to automated testing: using qualitative evaluation to guide quantitative optimisation.
+This closed loop architecture, RL exploration shaped by LLM judgment, applies the same principle as RLHF to automated testing: using qualitative evaluation to guide quantitative optimisation.
 
 Each discovery is sent to GPT-4o-mini with a structured prompt. The judge returns a validated JSON assessment:
 
@@ -116,7 +116,7 @@ The summary is grouped by root cause text from previous evaluations. Grouping ha
 
 ### Design Journey
 
-Initial runs with flat +10 reward collapsed into exploitation — the agent repeated `DELETE /items` 105,000 times per window because every hit paid the same. Adding the LLM judge with severity-based rewards didn't fix this because repeat combos bypassed the judge entirely and still received +10. Removing rewards for repeat combos caused the opposite failure — learned helplessness where the agent stopped executing altogether. The breakthrough was combining count-based decay for repeat discoveries with LLM novelty scoring for new ones. Known bugs pay less over time; genuinely new discoveries pay full reward based on the judge's severity and novelty assessment. This created natural exploration pressure without any hardcoded coverage rules. The result: 154 unique bug combos across all four endpoints, including a 5-level dependency chain discovery that no previous configuration achieved.
+Initial runs with flat +10 reward collapsed into exploitation. The agent repeated DELETE /items 105,000 times per window because every hit paid the same. Adding the LLM judge with severity-based rewards was a clear improvement. The judge correctly filtered false positives, produced actionable bug reports with severity and root cause, and pushed unique discoveries from 47 to 57. But the exploitation trap remained because repeat combos bypassed the judge entirely and still received +10. Removing rewards for repeat combos caused the opposite failure, learned helplessness where the agent stopped executing altogether. The breakthrough was combining count-based decay for repeat discoveries with LLM novelty scoring for new ones. Known bugs pay less over time, genuinely new discoveries pay full reward based on the judge's severity and novelty assessment. This created natural exploration pressure without any hardcoded coverage rules. The result: 154 unique bug combos across all four endpoints, including a 5-level dependency chain discovery that no previous configuration achieved.
 
 ## LLM as Judge Evaluation
 
@@ -131,7 +131,7 @@ The judge is evaluated against a golden dataset of 45 human labelled examples, a
 
 The judge excels at binary bug detection (100% recall) but polarises severity classification toward extremes and defaults to `error_handling` for categories. These findings inform where human review is still needed.
 
-**Judge reliability** is measured through two additional checks. Consistency measurement runs the same discovery through the judge multiple times and tracks agreement across bug detection, severity, category, and confidence spread. Confidence calibration checks whether the judge's stated confidence matches actual accuracy — when the judge says confidence=0.9, the Expected Calibration Error (ECE) measures whether it's actually correct 90% of the time.
+**Judge reliability** is measured through two additional checks. Consistency measurement runs the same discovery through the judge multiple times and tracks agreement across bug detection, severity, category, and confidence spread. Confidence calibration checks whether the judge's stated confidence matches actual accuracy, when the judge says confidence=0.9, the Expected Calibration Error (ECE) measures whether it's actually correct 90% of the time.
 
 ## Pipeline Details
 
